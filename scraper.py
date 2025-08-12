@@ -2,7 +2,6 @@
 import requests
 from bs4 import BeautifulSoup
 from transformers import pipeline
-from playwright.sync_api import sync_playwright
 
 # Initialize AI model (can be changed to another open-source one)
 try:
@@ -17,21 +16,6 @@ def format_url(url):
     if not url.startswith("http://") and not url.startswith("https://"):
         return "https://" + url
     return url
-
-
-   
-
-def fetch_page_text(url):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto(url, timeout=60000)
-        content = page.content()
-        text = page.inner_text("body")
-        browser.close()
-    return text
-
-
 
 
 def manual_scrape(url, tag, class_name):
@@ -74,4 +58,3 @@ def ai_scrape(url, query):
         return extracted
     else:
         return [str(results)]
-
