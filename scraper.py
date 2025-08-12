@@ -1,41 +1,32 @@
 # scraper.py
-# scraper.py
-from scraper_requests_html import fetch_with_requests_html
-from scraper_playwright import fetch_with_playwright
+from requests_html import HTMLSession
 from transformers import pipeline
 
-# AI model pipeline (for Q&A)
-qa_pipeline = pipeline("question-answering", model="distilbert-base-cased-distilled-squad")
-
-SCRAPER_MODE = "playwright"  # Change to "requests_html" to switch
-
+# Manual scraper that can handle basic JS
 def manual_scrape(url, tag, class_name=None):
-    if SCRAPER_MODE == "playwright":
-        return fetch_with_playwright(url, tag, class_name)
-    else:
-        return fetch_with_requests_html(url, tag, class_name)
+    session = HTMLSession()
+    try:
+        r = session.get(url)
+        r.html.render(timeout=20)  # Render JavaScript
+        if class_name:
+            elements = r.html.find(f"{tag}.{class_name}")
+        else:
+            elements = r.html.find(tag)
+        return [el.text for el in elements if el.text.strip()]
+    except Exception as e:
+        return [f"Error: {e}"]
 
-def ai_scrape(url, question):
-    if SCRAPER_MODE == "playwright":
-        page_text = fetch_with_playwright(url)
-    else:
-        page_text = fetch_with_requests_html(url)
+# AI scraper using HuggingFace Q&A
+def ai_scrape(url, query):
+    session = HTMLSession()
+    try:
+        r = session.get(url)
+        r.html.render(timeout=20)
+        text_content = " ".join([el.text for el in r.html.find("*") if el.text.strip()])
 
-    if not page_text or len(page_text.strip()) < 20:
-        return "No meaningful content found."
+        qa = pipeline("question-answering", model="distilbert-base-cased-distilled-squad")
+        result = qa(question=query, context=text_content)
 
-    result = qa_pipeline({
-        "context": page_text,
-        "question": question
-    })
-
-    return {
-        "answer": result["answer"],
-        "score": result["score"]
-    }
-
-
-    return {
-        "answer": result["answer"],
-        "score": result["score"]
-    }
+        return [{"answer": result["answer"], "score": result["score"]}]
+    except Exception as e:
+        return [{"answer": f"Error: {e}", "score": 0}]
