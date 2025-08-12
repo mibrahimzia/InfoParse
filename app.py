@@ -3,7 +3,7 @@ import streamlit as st
 from scraper import scrape_content
 
 st.set_page_config(page_title="ParseBot", page_icon="🔍", layout="wide")
-st.title("🔍 IIIIIIIIIIIIIIIIIIIIIParseBot - Smart Web Content Extractor")
+st.title("🔍 ParseBot - Smart Web Content Extractor")
 
 st.markdown("""
 Enter a webpage URL and describe in plain English what you want to extract.  
