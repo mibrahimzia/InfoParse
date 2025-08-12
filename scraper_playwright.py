@@ -1,3 +1,4 @@
+'''
 # scraper_playwright.py
 from playwright.sync_api import sync_playwright
 
@@ -19,3 +20,4 @@ def fetch_with_playwright(url, tag=None, class_name=None):
             text = page.inner_text("body")
             browser.close()
             return text
+'''
