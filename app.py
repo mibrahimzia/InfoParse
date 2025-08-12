@@ -1,28 +1,37 @@
 # app.py
 import streamlit as st
-from scraper import scrape_content
+from scraper import manual_scrape, ai_scrape
 
-st.set_page_config(page_title="ParseBot", page_icon="🔍", layout="wide")
-st.title("🔍 ParseBot - Smart Web Content Extractor")
+st.set_page_config(page_title="InfoParse", layout="wide")
+st.title("🔍 InfoParse — Smart Web Data Extractor")
 
-st.markdown("""
-Enter a webpage URL and describe in plain English what you want to extract.  
-Example: *"Get all article titles"* or *"Extract product names and prices"*.
-""")
+mode = st.radio("Choose Mode", ["Manual (HTML Tag + Class)", "AI (Natural Language)"])
 
-url = st.text_input("Enter webpage URL")
-nl_query = st.text_area("What do you want to extract?", height=100)
+url = st.text_input("Enter the webpage URL:")
 
-if st.button("Scrape Data"):
-    if not url.strip() or not nl_query.strip():
-        st.error("Please enter both URL and query.")
-    else:
-        st.info("Scraping the webpage based on your query...")
-        results = scrape_content(url, nl_query)
+if mode == "Manual (HTML Tag + Class)":
+    tag = st.text_input("HTML tag (e.g., p, div, h1)")
+    class_name = st.text_input("HTML class (optional)")
+    if st.button("Scrape Data"):
+        if url and tag:
+            with st.spinner("Scraping..."):
+                results = manual_scrape(url, tag, class_name)
+            if results:
+                st.success(f"Found {len(results)} results")
+                for r in results:
+                    st.write(f"- {r}")
+            else:
+                st.warning("No results found. Check the tag/class.")
 
-        if results and not results[0].startswith("Error:"):
-            st.success(f"✅ Found {len(results)} relevant results.")
-            for i, item in enumerate(results[:50], start=1):
-                st.write(f"**{i}.** {item}")
-        else:
-            st.error(results[0] if results else "No results found.")
+elif mode == "AI (Natural Language)":
+    query = st.text_input("What do you want to find on this page? (e.g., latest news headlines)")
+    if st.button("Scrape Data with AI"):
+        if url and query:
+            with st.spinner("AI is searching for relevant content..."):
+                results = ai_scrape(url, query)
+            if results:
+                st.success(f"Found {len(results)} relevant matches")
+                for r in results:
+                    st.write(f"- {r}")
+            else:
+                st.warning("No relevant results found.")
