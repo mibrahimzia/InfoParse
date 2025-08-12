@@ -1,0 +1,7 @@
+[server]
+headless = true
+
+[build]
+commands = [
+    "python -m playwright install chromium"
+]
