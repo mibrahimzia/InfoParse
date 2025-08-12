@@ -11,11 +11,11 @@ url = st.text_input("Enter URL (with http/https):")
 
 if option == "Manual (Tag/Class)":
     tag = st.text_input("Enter HTML tag (e.g., p, div):")
-    class_name = st.text_input("Enter class name (optional):")
+    #class_name = st.text_input("Enter class name (optional):")
 
     if st.button("Scrape"):
         if url and tag:
-            results = manual_scrape(url, tag, class_name)
+            results = manual_scrape(url, tag)
             st.write(results)
         else:
             st.warning("Please provide both a valid URL and tag.")
