@@ -1,3 +1,4 @@
+'''
 # guesser.py
 def interpret_query(query: str):
     """Guess HTML tag and class based on keywords in query."""
@@ -22,3 +23,4 @@ def interpret_query(query: str):
 
     # Default fallback
     return {"tag": "p", "class": ""}
+'''
