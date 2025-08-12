@@ -1,8 +1,4 @@
 [server]
 headless = true
-
-[build]
-# These commands run when Streamlit Cloud builds your app
-commands = [
-    "playwright install --with-deps chromium"
-]
+port = 8501
+enableCORS = false
