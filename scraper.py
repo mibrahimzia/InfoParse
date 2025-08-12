@@ -1,32 +1,33 @@
 # scraper.py
-from requests_html import HTMLSession
+from playwright.sync_api import sync_playwright
 from transformers import pipeline
 
-# Manual scraper that can handle basic JS
+def fetch_page_content(url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.goto(url, timeout=60000)
+        content = page.content()
+        text = page.inner_text("body")
+        browser.close()
+        return text
+
 def manual_scrape(url, tag, class_name=None):
-    session = HTMLSession()
-    try:
-        r = session.get(url)
-        r.html.render(timeout=20)  # Render JavaScript
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.goto(url, timeout=60000)
         if class_name:
-            elements = r.html.find(f"{tag}.{class_name}")
+            selector = f"{tag}.{class_name}"
         else:
-            elements = r.html.find(tag)
-        return [el.text for el in elements if el.text.strip()]
-    except Exception as e:
-        return [f"Error: {e}"]
+            selector = tag
+        elements = page.query_selector_all(selector)
+        results = [el.inner_text() for el in elements if el.inner_text().strip()]
+        browser.close()
+        return results
 
-# AI scraper using HuggingFace Q&A
 def ai_scrape(url, query):
-    session = HTMLSession()
-    try:
-        r = session.get(url)
-        r.html.render(timeout=20)
-        text_content = " ".join([el.text for el in r.html.find("*") if el.text.strip()])
-
-        qa = pipeline("question-answering", model="distilbert-base-cased-distilled-squad")
-        result = qa(question=query, context=text_content)
-
-        return [{"answer": result["answer"], "score": result["score"]}]
-    except Exception as e:
-        return [{"answer": f"Error: {e}", "score": 0}]
+    text_content = fetch_page_content(url)
+    qa = pipeline("question-answering", model="distilbert-base-cased-distilled-squad")
+    result = qa(question=query, context=text_content)
+    return [{"answer": result["answer"], "score": result["score"]}]
