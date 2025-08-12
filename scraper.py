@@ -12,6 +12,16 @@ def manual_scrape(url, tag, class_name):
     soup = BeautifulSoup(response.text, "html.parser")
     elements = soup.find_all(tag, class_=class_name if class_name else None)
     return [el.get_text(strip=True) for el in elements]
+'''_____________________________________________________________________________________________________'''
+     # Auto-add schema if missing
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = "https://" + url
+
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, "html.parser")
+    results = soup.find_all(tag, class_=class_name)
+    return [r.get_text(strip=True) for r in results]
+'''_______________________________________________________________________________________________________'''
 
 def ai_scrape(url, query):
     """Scrape all visible text and use AI to filter relevant content."""
