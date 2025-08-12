@@ -3,3 +3,4 @@ requests-html
 playwright
 transformers
 torch
+scraper
