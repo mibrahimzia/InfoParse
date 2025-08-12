@@ -1,41 +1,38 @@
 # scraper.py
 import requests
 from bs4 import BeautifulSoup
+from transformers import pipeline
 
-def dynamic_search(soup, query):
-    query_words = [w.strip().lower() for w in query.split() if w.strip()]
-    scored = []
+# Load AI model once at startup (BART for zero-shot classification)
+classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
-    for tag in soup.find_all(True):
-        text = tag.get_text(strip=True)
-        if not text:
-            continue
+def manual_scrape(url, tag, class_name):
+    """Scrape using HTML tag and optional class name."""
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, "html.parser")
+    elements = soup.find_all(tag, class_=class_name if class_name else None)
+    return [el.get_text(strip=True) for el in elements]
 
-        text_lower = text.lower()
-        score = sum(word in text_lower for word in query_words)
+def ai_scrape(url, query):
+    """Scrape all visible text and use AI to filter relevant content."""
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, "html.parser")
 
-        # Weight based on tag importance
-        if tag.name in ["h1", "h2", "h3"]:
-            score += 1
-        if tag.name == "title":
-            score += 2
+    # Get all text from tags that might contain relevant content
+    candidates = []
+    for tag in ["p", "h1", "h2", "h3", "li", "span"]:
+        for el in soup.find_all(tag):
+            text = el.get_text(strip=True)
+            if text and len(text.split()) > 2:
+                candidates.append(text)
 
-        if score > 0:
-            scored.append((score, text))
+    # AI: classify each block of text against the query
+    results = classifier(candidates, [query], multi_label=False)
 
-    # Sort by score descending
-    scored.sort(key=lambda x: x[0], reverse=True)
-    return [t for s, t in scored]
+    # Keep only highly relevant matches
+    filtered = []
+    for text, score in zip(results["sequence"], results["scores"]):
+        if score > 0.6:  # threshold for relevance
+            filtered.append(text)
 
-def scrape_content(url, query):
-    try:
-        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'lxml')
-
-        # Run dynamic search
-        results = dynamic_search(soup, query)
-
-        return results if results else ["No relevant content found."]
-    except Exception as e:
-        return [f"Error: {e}"]
+    return filtered
