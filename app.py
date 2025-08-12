@@ -1,6 +1,12 @@
 # app.py
 import streamlit as st
 from scraper import manual_scrape, ai_scrape
+import os
+if not os.path.exists("/home/adminuser/.cache/ms-playwright"):
+    from playwright.sync_api import sync_playwright
+    import subprocess
+    subprocess.run(["playwright", "install", "chromium"])
+
 
 st.title("InfoParse - Web Scraper")
 
