@@ -1,60 +1,35 @@
 # scraper.py
-import requests
-from bs4 import BeautifulSoup
+# scraper.py
+from scraper_requests_html import fetch_with_requests_html
+from scraper_playwright import fetch_with_playwright
 from transformers import pipeline
 
-# Initialize AI model (can be changed to another open-source one)
-try:
-    qa_pipeline = pipeline("question-answering", model="distilbert-base-uncased-distilled-squad")
-except Exception as e:
-    qa_pipeline = None
-    print("Warning: AI model could not be loaded:", e)
+# AI model pipeline (for Q&A)
+qa_pipeline = pipeline("question-answering", model="distilbert-base-cased-distilled-squad")
 
+SCRAPER_MODE = "playwright"  # Change to "requests_html" to switch
 
-def format_url(url):
-    """Ensure URL starts with http or https"""
-    if not url.startswith("http://") and not url.startswith("https://"):
-        return "https://" + url
-    return url
-
-
-def manual_scrape(url, tag, class_name):
-    """Manual HTML scraping based on tag and class"""
-    url = format_url(url)
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, "html.parser")
-
-    elements = soup.find_all(tag, class_=class_name)
-    return [el.get_text(strip=True) for el in elements]
-
-
-def ai_scrape(url, query):
-    """AI-assisted scraping and Q&A"""
-    url = format_url(url)
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, "html.parser")
-    text = soup.get_text(separator=" ", strip=True)
-
-    if qa_pipeline is None:
-        return ["AI model not available"]
-
-    try:
-        results = qa_pipeline(question=query, context=text)
-    except Exception as e:
-        return [f"Error running AI model: {e}"]
-
-    # Debug output (optional)
-    print("DEBUG AI output:", results)
-
-    # Handle possible formats
-    if isinstance(results, dict):
-        return [results.get("answer", "No answer found"),
-                f"Score: {results.get('score', 'N/A')}"]
-    elif isinstance(results, list):
-        extracted = []
-        for item in results:
-            if isinstance(item, dict):
-                extracted.append(item.get("generated_text") or item.get("label") or str(item))
-        return extracted
+def manual_scrape(url, tag, class_name=None):
+    if SCRAPER_MODE == "playwright":
+        return fetch_with_playwright(url, tag, class_name)
     else:
-        return [str(results)]
+        return fetch_with_requests_html(url, tag, class_name)
+
+def ai_scrape(url, question):
+    if SCRAPER_MODE == "playwright":
+        page_text = fetch_with_playwright(url)
+    else:
+        page_text = fetch_with_requests_html(url)
+
+    if not page_text or len(page_text.strip()) < 20:
+        return "No meaningful content found."
+
+    result = qa_pipeline({
+        "context": page_text,
+        "question": question
+    })
+
+    return {
+        "answer": result["answer"],
+        "score": result["score"]
+    }
