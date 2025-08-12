@@ -1,32 +1,28 @@
 # app.py
 import streamlit as st
-from scraper import manual_scrape, ai_scrape
+from scraper import manual_scrape
 
+st.set_page_config(page_title="InfoParse", page_icon="🔍", layout="centered")
 
-st.title("InfoParse - Web Scraper")
+st.title("🔍 InfoParse - Playwright Scraper")
+st.write("Enter a URL, HTML tag, and optional class name to scrape.")
 
-option = st.radio("Choose scraping mode:", ["Manual (Tag/Class)", "AI Q&A"])
+url = st.text_input("Website URL", "")
+tag = st.text_input("HTML Tag (e.g., div, p, h1)", "")
+class_name = st.text_input("Class Name (optional)", "")
 
-url = st.text_input("Enter URL (with http/https):")
+if st.button("Scrape"):
+    if url.strip() == "" or tag.strip() == "":
+        st.warning("Please enter both URL and HTML tag.")
+    else:
+        try:
+            results = manual_scrape(url, tag, class_name if class_name else None)
+            if results:
+                st.success(f"Found {len(results)} elements:")
+                for r in results:
+                    st.write(r)
+            else:
+                st.info("No matching elements found.")
+        except Exception as e:
+            st.error(f"Error: {e}")
 
-if option == "Manual (Tag/Class)":
-    tag = st.text_input("Enter HTML tag (e.g., p, div):")
-    #class_name = st.text_input("Enter class name (optional):")
-
-    if st.button("Scrape"):
-        if url and tag:
-            results = manual_scrape(url, tag)
-            st.write(results)
-        else:
-            st.warning("Please provide both a valid URL and tag.")
-
-elif option == "AI Q&A":
-    question = st.text_input("Enter your question:")
-    if st.button("Ask AI"):
-        if url and question:
-            results = ai_scrape(url, question)
-            for res in results:
-                st.write(f"Answer: {res['answer']}")
-                st.write(f"Score: {res['score']:.4f}")
-        else:
-            st.warning("Please provide both a valid URL and question.")
