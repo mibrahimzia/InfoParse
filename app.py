@@ -3,35 +3,46 @@ import streamlit as st
 from scraper import manual_scrape, ai_scrape
 
 st.set_page_config(page_title="InfoParse", layout="wide")
-st.title("🔍 InfoParse — Smart Web Data Extractor")
+st.title("📰 InfoParse - Web Data Extractor")
 
-mode = st.radio("Choose Mode", ["Manual (HTML Tag + Class)", "AI (Natural Language)"])
+# Input method
+mode = st.radio("Choose Extraction Mode", ["Manual HTML Scrape", "AI Q&A"])
 
-url = st.text_input("Enter the webpage URL:")
+# Shared inputs
+url = st.text_input("Enter the URL:")
 
-if mode == "Manual (HTML Tag + Class)":
-    tag = st.text_input("HTML tag (e.g., p, div, h1)")
-    class_name = st.text_input("HTML class (optional)")
-    if st.button("Scrape Data"):
-        if url and tag:
-            with st.spinner("Scraping..."):
-                results = manual_scrape(url, tag, class_name)
-            if results:
-                st.success(f"Found {len(results)} results")
-                for r in results:
-                    st.write(f"- {r}")
-            else:
-                st.warning("No results found. Check the tag/class.")
+if mode == "Manual HTML Scrape":
+    col1, col2 = st.columns(2)
+    with col1:
+        tag = st.text_input("HTML Tag (e.g., div, p, h1):", "p")
+    with col2:
+        class_name = st.text_input("Class Name (leave blank if none):", "")
 
-elif mode == "AI (Natural Language)":
-    query = st.text_input("What do you want to find on this page? (e.g., latest news headlines)")
-    if st.button("Scrape Data with AI"):
-        if url and query:
-            with st.spinner("AI is searching for relevant content..."):
+    if st.button("Scrape Manually"):
+        if url.strip():
+            try:
+                results = manual_scrape(url, tag, class_name if class_name else None)
+                if results:
+                    st.success(f"Found {len(results)} items.")
+                    for r in results:
+                        st.write("-", r)
+                else:
+                    st.warning("No matching elements found.")
+            except Exception as e:
+                st.error(f"Error: {e}")
+        else:
+            st.warning("Please enter a valid URL.")
+
+elif mode == "AI Q&A":
+    query = st.text_input("Enter your question:")
+    if st.button("Ask AI"):
+        if url.strip() and query.strip():
+            try:
                 results = ai_scrape(url, query)
-            if results:
-                st.success(f"Found {len(results)} relevant matches")
                 for r in results:
-                    st.write(f"- {r}")
-            else:
-                st.warning("No relevant results found.")
+                    st.write("-", r)
+            except Exception as e:
+                st.error(f"Error: {e}")
+        else:
+            st.warning("Please enter both a URL and a question.")
+
