@@ -24,17 +24,33 @@ def manual_scrape(url, tag, class_name):
 '''_______________________________________________________________________________________________________'''
 
 def ai_scrape(url, query):
-    """Scrape all visible text and use AI to filter relevant content."""
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, "html.parser")
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = "https://" + url
 
-    # Get all text from tags that might contain relevant content
-    candidates = []
-    for tag in ["p", "h1", "h2", "h3", "li", "span"]:
-        for el in soup.find_all(tag):
-            text = el.get_text(strip=True)
-            if text and len(text.split()) > 2:
-                candidates.append(text)
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, "html.parser")
+    text = soup.get_text(separator=" ", strip=True)
+
+    # Run AI model
+    results = qa_pipeline(question=query, context=text)
+
+    # Debug print (remove in production)
+    print("DEBUG AI output:", results)
+
+    # Handle different formats
+    if isinstance(results, dict):
+        # For QA pipelines
+        return [results.get("answer", ""), f"Score: {results.get('score', 'N/A')}"]
+    elif isinstance(results, list):
+        # For text-generation or classification pipelines
+        extracted = []
+        for item in results:
+            if isinstance(item, dict):
+                extracted.append(item.get("generated_text") or item.get("label") or str(item))
+        return extracted
+    else:
+        return [str(results)]
+
 
     # AI: classify each block of text against the query
     results = classifier(candidates, [query], multi_label=False)
