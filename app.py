@@ -2,6 +2,8 @@
 import streamlit as st
 from scraper import manual_scrape, ai_scrape
 
+
+
 st.set_page_config(page_title="InfoParse", layout="wide")
 st.title("📰 InfoParse - Web Data Extractor")
 
