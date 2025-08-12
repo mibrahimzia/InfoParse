@@ -1,5 +1,15 @@
 # scraper.py
+import subprocess
+import os
 from playwright.sync_api import sync_playwright
+
+# Auto-install chromium if missing
+PLAYWRIGHT_CACHE = os.path.expanduser("~/.cache/ms-playwright")
+if not os.path.exists(PLAYWRIGHT_CACHE) or not os.listdir(PLAYWRIGHT_CACHE):
+    try:
+        subprocess.run(["playwright", "install", "chromium"], check=True)
+    except Exception as e:
+        print("⚠️ Failed to auto-install Chromium:", e)
 
 def manual_scrape(url, tag, class_name=None):
     """Scrape elements by tag and optional class using Playwright."""
