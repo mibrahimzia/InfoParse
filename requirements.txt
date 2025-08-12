@@ -4,3 +4,4 @@ requests
 transformers
 torch
 scraper
+playwright
