@@ -1,4 +1,4 @@
 streamlit
-requests-html
+playwright
 transformers
 torch
